@@ -1,0 +1,307 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================
+// ENDEREÇOS
+// ========================
+
+model Uf {
+  id         Int         @id @default(autoincrement())
+  nome       String
+  sigla      String      @db.VarChar(2)
+  municipios Municipio[]
+
+  @@map("ufs")
+}
+
+model Municipio {
+  id     Int      @id @default(autoincrement())
+  nome   String
+  ufId   Int      @map("uf_id")
+  uf     Uf       @relation(fields: [ufId], references: [id])
+  bairros Bairro[]
+
+  @@map("municipios")
+}
+
+model Bairro {
+  id           Int          @id @default(autoincrement())
+  nome         String
+  municipioId  Int          @map("municipio_id")
+  municipio    Municipio    @relation(fields: [municipioId], references: [id])
+  logradouros  Logradouro[]
+
+  @@map("bairros")
+}
+
+model Logradouro {
+  id       Int       @id @default(autoincrement())
+  nome     String
+  cep      String    @db.VarChar(10)
+  bairroId Int       @map("bairro_id")
+  bairro   Bairro    @relation(fields: [bairroId], references: [id])
+  usuarios Usuario[]
+
+  @@map("logradouros")
+}
+
+// ========================
+// USUÁRIOS (sem herança JOINED — usa campo "role")
+// ========================
+
+enum Role {
+  ADMIN
+  GESTOR
+  SECRETARIA
+  PROFESSOR
+  RESPONSAVEL
+  ALUNO
+}
+
+model Usuario {
+  id            Int       @id @default(autoincrement())
+  login         String    @unique
+  senha         String
+  nome          String
+  sobrenome     String?
+  sexo          String?   @db.VarChar(1)
+  dataNasc      DateTime? @map("data_nasc")
+  email         String?
+  cpf           String?   @unique @db.VarChar(14)
+  rg            String?   @db.VarChar(20)
+  numero        String?
+  complemento   String?
+  telefone      String?   @db.VarChar(20)
+  status        Boolean   @default(true)
+  dataIngresso  DateTime? @map("data_ingresso")
+  dataSaida     DateTime? @map("data_saida")
+  role          Role
+  fotoUrl       String?   @map("foto_url")
+
+  // Endereço
+  logradouroId  Int?      @map("logradouro_id")
+  logradouro    Logradouro? @relation(fields: [logradouroId], references: [id])
+
+  // Dados específicos por role (nullable — preenchidos conforme o role)
+  // Professor
+  professorEscolaAnterior  String? @map("prof_escola_anterior")
+  professorFormacao         String? @map("prof_formacao")
+  professorInstituicao      String? @map("prof_instituicao")
+  professorAnoConclusao    DateTime? @map("prof_ano_conclusao")
+
+  // Gestor
+  gestorFormacao         String? @map("gestor_formacao")
+  gestorInstituicao      String? @map("gestor_instituicao")
+  gestorAnoConclusao     DateTime? @map("gestor_ano_conclusao")
+
+  // Secretária
+  secretariaExperiencia    String? @map("sec_experiencia")
+  secretariaInstAnterior   String? @map("sec_inst_anterior")
+  secretariaFormacao       String? @map("sec_formacao")
+  secretariaInstituicao    String? @map("sec_instituicao")
+  secretariaAnoConclusao   DateTime? @map("sec_ano_conclusao")
+
+  // Aluno
+  alunoEscolaAnterior  String? @map("aluno_escola_anterior")
+  alunoSerieAnterior   String? @map("aluno_serie_anterior")
+  alunoEscolaAtual     String? @map("aluno_escola_atual")
+  alunoSerieAtual      String? @map("aluno_serie_atual")
+  alunoTurmaId         Int?    @map("aluno_turma_id")
+  alunoTurma           Turma?  @relation("AlunoTurma", fields: [alunoTurmaId], references: [id])
+  alunoResponsavelId   Int?    @map("aluno_responsavel_id")
+  alunoResponsavel     Usuario? @relation("ResponsavelAlunos", fields: [alunoResponsavelId], references: [id])
+
+  // Responsável
+  responsavelAdimplente Boolean? @map("resp_adimplente")
+  responsavelAlunos     Usuario[] @relation("ResponsavelAlunos")
+
+  // Relacionamentos
+  professorDisciplinas    ProfessorDisciplina[]
+  turmaDisciplinas        TurmaDisciplinaProfessor[] @relation("TDPProfessor")
+  ocorrencias             Ocorrencia[]
+  boletimNotas            BoletimAlunoDisciplina[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("usuarios")
+}
+
+// ========================
+// ESCOLA
+// ========================
+
+model Serie {
+  id     Int     @id @default(autoincrement())
+  nome   String
+  turmas Turma[]
+
+  @@map("series")
+}
+
+model Periodo {
+  id     Int     @id @default(autoincrement())
+  nome   String
+  turmas Turma[]
+
+  @@map("periodos")
+}
+
+model Turma {
+  id        Int     @id @default(autoincrement())
+  nome      String
+  limite    Int     @default(40)
+  inseridos Int     @default(0)
+
+  serieId   Int     @map("serie_id")
+  serie     Serie   @relation(fields: [serieId], references: [id])
+
+  periodoId Int     @map("periodo_id")
+  periodo   Periodo @relation(fields: [periodoId], references: [id])
+
+  alunos              Usuario[]                  @relation("AlunoTurma")
+  turmaDisciplinas    TurmaDisciplinaProfessor[]
+  tarefas             TarefaTurma[]
+
+  @@map("turmas")
+}
+
+model Disciplina {
+  id       Int     @id @default(autoincrement())
+  nome     String
+  conteudo String?
+
+  professores         ProfessorDisciplina[]
+  turmaDisciplinas    TurmaDisciplinaProfessor[]
+  boletimNotas        BoletimAlunoDisciplina[]
+  tarefas             Tarefa[]
+
+  @@map("disciplinas")
+}
+
+// Tabela join: Professor <-> Disciplina
+model ProfessorDisciplina {
+  professorId  Int        @map("professor_id")
+  disciplinaId Int        @map("disciplina_id")
+  professor    Usuario    @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  disciplina   Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Cascade)
+
+  @@id([professorId, disciplinaId])
+  @@map("professor_disciplina")
+}
+
+// Tabela associativa: Turma + Disciplina + Professor
+model TurmaDisciplinaProfessor {
+  id            Int        @id @default(autoincrement())
+  turmaId       Int        @map("turma_id")
+  disciplinaId  Int        @map("disciplina_id")
+  professorId   Int        @map("professor_id")
+
+  turma         Turma      @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  disciplina    Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Cascade)
+  professor     Usuario    @relation("TDPProfessor", fields: [professorId], references: [id], onDelete: Cascade)
+
+  @@unique([turmaId, disciplinaId, professorId])
+  @@map("turma_disciplina_professor")
+}
+
+// ========================
+// BOLETINS E NOTAS
+// ========================
+
+model Bimestre {
+  id          Int       @id @default(autoincrement())
+  nome        String
+  dataInicial DateTime? @map("data_inicial")
+  dataFinal   DateTime  @map("data_final")
+  boletins    Boletim[]
+
+  @@map("bimestres")
+}
+
+model Boletim {
+  id         Int       @id @default(autoincrement())
+  bimestreId Int       @map("bimestre_id")
+  bimestre   Bimestre  @relation(fields: [bimestreId], references: [id])
+  notas      BoletimAlunoDisciplina[]
+
+  @@map("boletins")
+}
+
+model BoletimAlunoDisciplina {
+  boletimId    Int        @map("boletim_id")
+  alunoId      Int        @map("aluno_id")
+  disciplinaId Int        @map("disciplina_id")
+  nota         Float
+  falta        Int        @default(0)
+
+  boletim      Boletim    @relation(fields: [boletimId], references: [id], onDelete: Cascade)
+  aluno        Usuario    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  disciplina   Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Cascade)
+
+  @@id([boletimId, alunoId, disciplinaId])
+  @@map("boletim_aluno_disciplina")
+}
+
+// ========================
+// OCORRÊNCIAS
+// ========================
+
+model Ocorrencia {
+  id        Int      @id @default(autoincrement())
+  assunto   String
+  descricao String?
+  data      DateTime @default(now())
+  alunoId   Int      @map("aluno_id")
+  aluno     Usuario  @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+
+  @@map("ocorrencias")
+}
+
+// ========================
+// TAREFAS
+// ========================
+
+model Tarefa {
+  id           Int        @id @default(autoincrement())
+  descricao    String
+  inicio       DateTime?
+  fim          DateTime?
+  disciplinaId Int        @map("disciplina_id")
+  disciplina   Disciplina @relation(fields: [disciplinaId], references: [id])
+  anexoUrl     String?    @map("anexo_url")
+
+  turmas       TarefaTurma[]
+
+  @@map("tarefas")
+}
+
+model TarefaTurma {
+  tarefaId Int    @map("tarefa_id")
+  turmaId  Int    @map("turma_id")
+  tarefa   Tarefa @relation(fields: [tarefaId], references: [id], onDelete: Cascade)
+  turma    Turma  @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([tarefaId, turmaId])
+  @@map("tarefa_turma")
+}
+
+// ========================
+// GALERIA
+// ========================
+
+model Imagem {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  descricao String?
+  url       String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("imagens")
+}
