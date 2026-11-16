@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/useAuth";
 import {
   Users,
   GraduationCap,
@@ -9,7 +9,7 @@ import {
   FileText,
 } from "lucide-react";
 import api from "../lib/api";
-import { ROLE_LABELS } from "../types";
+import { ROLE_LABELS, type Usuario } from "../types";
 
 interface DashStats {
   totalUsuarios: number;
@@ -42,7 +42,7 @@ export function DashboardPage() {
           totalAlunos:
             (usuarios.data.total || 0) -
             (usuarios.data.data?.filter(
-              (u: any) => u.role !== "ALUNO"
+              (u: Usuario) => u.role !== "ALUNO"
             ).length || 0),
           totalProfessores: 0,
           totalTurmas: turmas.data?.length || 0,

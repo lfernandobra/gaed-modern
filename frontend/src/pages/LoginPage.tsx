@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/useAuth";
+import { getApiErrorMessage } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 import { GraduationCap, Loader2 } from "lucide-react";
 
@@ -19,9 +20,9 @@ export function LoginPage() {
     try {
       await doLogin(login, senha);
       navigate("/");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err.response?.data?.error || "Erro ao fazer login. Tente novamente."
+        getApiErrorMessage(err, "Erro ao fazer login. Tente novamente.")
       );
     } finally {
       setLoading(false);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import api from "../lib/api";
-import type { Turma } from "../types";
+import api, { getApiErrorMessage } from "../lib/api";
+import type { Periodo, Serie, Turma } from "../types";
 import { DataTable } from "../components/ui/DataTable";
 import { Button } from "../components/ui/Button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
@@ -8,8 +8,8 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 export function TurmasPage() {
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [loading, setLoading] = useState(true);
-  const [series, setSeries] = useState<any[]>([]);
-  const [periodos, setPeriodos] = useState<any[]>([]);
+  const [series, setSeries] = useState<Serie[]>([]);
+  const [periodos, setPeriodos] = useState<Periodo[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Turma | null>(null);
   const [form, setForm] = useState({ nome: "", serieId: 0, periodoId: 0, limite: 40 });
@@ -44,8 +44,8 @@ export function TurmasPage() {
       setShowForm(false);
       setEditing(null);
       loadData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Erro ao salvar");
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Erro ao salvar"));
     }
   };
 
@@ -54,8 +54,8 @@ export function TurmasPage() {
     try {
       await api.delete(`/escola/turmas/${id}`);
       loadData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Erro ao remover");
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Erro ao remover"));
     }
   };
 
@@ -103,14 +103,14 @@ export function TurmasPage() {
                 <label className="block text-xs font-medium text-muted-foreground mb-1">Série *</label>
                 <select value={form.serieId} onChange={(e) => setForm({ ...form, serieId: Number(e.target.value) })} className="w-full px-3 py-2 border border-border rounded-lg text-sm outline-none">
                   <option value={0}>Selecione...</option>
-                  {series.map((s: any) => <option key={s.id} value={s.id}>{s.nome}</option>)}
+                  {series.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">Período *</label>
                 <select value={form.periodoId} onChange={(e) => setForm({ ...form, periodoId: Number(e.target.value) })} className="w-full px-3 py-2 border border-border rounded-lg text-sm outline-none">
                   <option value={0}>Selecione...</option>
-                  {periodos.map((p: any) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                  {periodos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
                 </select>
               </div>
               <div>

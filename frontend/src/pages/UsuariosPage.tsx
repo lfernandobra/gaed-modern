@@ -1,17 +1,18 @@
-import { useEffect, useState } from "react";
-import api from "../lib/api";
+import { useCallback, useEffect, useState } from "react";
+import api, { getApiErrorMessage } from "../lib/api";
 import type { Usuario, PaginatedResponse } from "../types";
 import { ROLE_LABELS } from "../types";
 import { DataTable } from "../components/ui/DataTable";
 import { Button } from "../components/ui/Button";
 import { Plus, Search, Pencil, Trash2 } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/useAuth";
 
 export function UsuariosPage() {
   const { user: currentUser } = useAuth();
   const [data, setData] = useState<PaginatedResponse<Usuario> | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -29,11 +30,11 @@ export function UsuariosPage() {
 
   const canEdit = currentUser && ["ADMIN", "GESTOR", "SECRETARIA"].includes(currentUser.role);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = { page, limit: 15 };
-      if (search) params.search = search;
+      const params: Record<string, string | number> = { page, limit: 15 };
+      if (activeSearch) params.search = activeSearch;
       if (roleFilter) params.role = roleFilter;
       const res = await api.get("/usuarios", { params });
       setData(res.data);
@@ -42,15 +43,19 @@ export function UsuariosPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, roleFilter, activeSearch]);
 
   useEffect(() => {
     loadData();
-  }, [page, roleFilter]);
+  }, [loadData]);
 
   const handleSearch = () => {
     setPage(1);
-    loadData();
+    if (activeSearch === search && page === 1) {
+      void loadData();
+    } else {
+      setActiveSearch(search);
+    }
   };
 
   const handleSave = async () => {
@@ -64,8 +69,8 @@ export function UsuariosPage() {
       setEditing(null);
       setForm({ login: "", senha: "", nome: "", sobrenome: "", email: "", cpf: "", telefone: "", role: "ALUNO" });
       loadData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Erro ao salvar");
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Erro ao salvar"));
     }
   };
 
@@ -74,8 +79,8 @@ export function UsuariosPage() {
     try {
       await api.delete(`/usuarios/${id}`);
       loadData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Erro ao desativar");
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Erro ao desativar"));
     }
   };
 

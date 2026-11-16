@@ -75,7 +75,7 @@ export function DataTable<T extends { id: number }>({
                 <td key={col.key} className="py-3 px-4 text-sm">
                   {col.render
                     ? col.render(item)
-                    : String((item as any)[col.key] ?? "")}
+                    : String((item as Record<string, unknown>)[col.key] ?? "")}
                 </td>
               ))}
               {actions && (

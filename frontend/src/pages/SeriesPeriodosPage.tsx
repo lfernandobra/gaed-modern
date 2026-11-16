@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../lib/api";
+import api, { getApiErrorMessage } from "../lib/api";
 import { DataTable } from "../components/ui/DataTable";
 import { Button } from "../components/ui/Button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
@@ -7,7 +7,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 interface SimpleEntity {
   id: number;
   nome: string;
-  _count?: any;
+  _count?: { turmas?: number };
 }
 
 export function SeriesPage() {
@@ -33,13 +33,13 @@ export function SeriesPage() {
       if (editing) await api.put(`/escola/series/${editing.id}`, { nome });
       else await api.post("/escola/series", { nome });
       setShowForm(false); setEditing(null); setNome(""); loadData();
-    } catch (err: any) { alert(err.response?.data?.error || "Erro ao salvar"); }
+    } catch (err: unknown) { alert(getApiErrorMessage(err, "Erro ao salvar")); }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm("Deseja remover esta série?")) return;
     try { await api.delete(`/escola/series/${id}`); loadData(); }
-    catch (err: any) { alert(err.response?.data?.error || "Erro ao remover"); }
+    catch (err: unknown) { alert(getApiErrorMessage(err, "Erro ao remover")); }
   };
 
   return (
@@ -95,7 +95,7 @@ export function PeriodosPage() {
       if (editing) await api.put(`/escola/periodos/${editing.id}`, { nome });
       else await api.post("/escola/periodos", { nome });
       setShowForm(false); setEditing(null); setNome(""); loadData();
-    } catch (err: any) { alert(err.response?.data?.error || "Erro ao salvar"); }
+    } catch (err: unknown) { alert(getApiErrorMessage(err, "Erro ao salvar")); }
   };
 
   return (

@@ -1,39 +1,22 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  type ReactNode,
-} from "react";
+import { useState, type ReactNode } from "react";
 import type { Usuario } from "../types";
 import api from "../lib/api";
+import { AuthContext } from "./useAuth";
 
-interface AuthContextType {
-  user: Usuario | null;
-  token: string | null;
-  login: (loginStr: string, senha: string) => Promise<void>;
-  logout: () => void;
-  isAuthenticated: boolean;
-  loading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<Usuario | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+function readStoredUser(): Usuario | null {
+  try {
     const savedToken = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
+    return savedToken && savedUser ? (JSON.parse(savedUser) as Usuario) : null;
+  } catch {
+    return null;
+  }
+}
 
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
-  }, []);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<Usuario | null>(() => readStoredUser());
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
+  const loading = false;
 
   const login = async (loginStr: string, senha: string) => {
     const response = await api.post("/auth/login", {
@@ -69,12 +52,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth deve ser usado dentro de AuthProvider");
-  }
-  return context;
 }

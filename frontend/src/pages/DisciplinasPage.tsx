@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../lib/api";
+import api, { getApiErrorMessage } from "../lib/api";
 import type { Disciplina } from "../types";
 import { DataTable } from "../components/ui/DataTable";
 import { Button } from "../components/ui/Button";
@@ -36,8 +36,8 @@ export function DisciplinasPage() {
       setShowForm(false);
       setEditing(null);
       loadData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Erro ao salvar");
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Erro ao salvar"));
     }
   };
 
@@ -46,8 +46,8 @@ export function DisciplinasPage() {
     try {
       await api.delete(`/escola/disciplinas/${id}`);
       loadData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Erro ao remover");
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Erro ao remover"));
     }
   };
 

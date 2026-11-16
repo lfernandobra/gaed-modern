@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../lib/api";
+import api, { getApiErrorMessage } from "../lib/api";
 import type { Imagem, PaginatedResponse } from "../types";
 import { Button } from "../components/ui/Button";
 import { Plus, Trash2 } from "lucide-react";
@@ -15,7 +15,7 @@ export function GaleriaPage() {
   const handleDelete = async (id: number) => {
     if (!confirm("Deseja remover esta imagem?")) return;
     try { await api.delete(`/imagens/${id}`); window.location.reload(); }
-    catch (err: any) { alert(err.response?.data?.error || "Erro ao remover"); }
+    catch (err: unknown) { alert(getApiErrorMessage(err, "Erro ao remover")); }
   };
 
   return (

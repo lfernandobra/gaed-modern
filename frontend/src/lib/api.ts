@@ -26,4 +26,14 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Extrai a mensagem de erro retornada pela API Axios com fallback amigável.
+ */
+export function getApiErrorMessage(err: unknown, fallback: string): string {
+  if (axios.isAxiosError<{ error?: string }>(err)) {
+    return err.response?.data?.error || fallback;
+  }
+  return fallback;
+}
+
 export default api;

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import api from "../lib/api";
-import type { Ocorrencia, PaginatedResponse } from "../types";
+import { useCallback, useEffect, useState } from "react";
+import api, { getApiErrorMessage } from "../lib/api";
+import type { Ocorrencia, PaginatedResponse, Usuario } from "../types";
 import { DataTable } from "../components/ui/DataTable";
 import { Button } from "../components/ui/Button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
@@ -12,9 +12,9 @@ export function OcorrenciasPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Ocorrencia | null>(null);
   const [form, setForm] = useState({ assunto: "", descricao: "", alunoId: 0 });
-  const [alunos, setAlunos] = useState<any[]>([]);
+  const [alunos, setAlunos] = useState<Usuario[]>([]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [oRes, aRes] = await Promise.all([
@@ -25,22 +25,22 @@ export function OcorrenciasPage() {
       setAlunos(aRes.data.data || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
-  };
+  }, [page]);
 
-  useEffect(() => { loadData(); }, [page]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleSave = async () => {
     try {
       if (editing) await api.put(`/ocorrencias/${editing.id}`, form);
       else await api.post("/ocorrencias", form);
       setShowForm(false); setEditing(null); loadData();
-    } catch (err: any) { alert(err.response?.data?.error || "Erro ao salvar"); }
+    } catch (err: unknown) { alert(getApiErrorMessage(err, "Erro ao salvar")); }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm("Deseja remover esta ocorrência?")) return;
     try { await api.delete(`/ocorrencias/${id}`); loadData(); }
-    catch (err: any) { alert(err.response?.data?.error || "Erro ao remover"); }
+    catch (err: unknown) { alert(getApiErrorMessage(err, "Erro ao remover")); }
   };
 
   const columns = [
@@ -88,7 +88,7 @@ export function OcorrenciasPage() {
                 <label className="block text-xs font-medium text-muted-foreground mb-1">Aluno *</label>
                 <select value={form.alunoId} onChange={(e) => setForm({ ...form, alunoId: Number(e.target.value) })} className="w-full px-3 py-2 border border-border rounded-lg text-sm outline-none">
                   <option value={0}>Selecione...</option>
-                  {alunos.map((a: any) => <option key={a.id} value={a.id}>{a.nome} {a.sobrenome || ""}</option>)}
+                  {alunos.map((a) => <option key={a.id} value={a.id}>{a.nome} {a.sobrenome || ""}</option>)}
                 </select>
               </div>
               <div>

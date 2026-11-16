@@ -1,0 +1,145 @@
+openapi: 3.0.3
+info:
+  title: GAED Modern — School Management API
+  version: 1.0.0
+  description: >
+    REST API for the GAED Modern academic management platform built with Express,
+    TypeScript, Prisma ORM, PostgreSQL, Zod validation, and role-based JWT authentication.
+servers:
+  - url: http://localhost:3001/api
+    description: Local Development Server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Service health check
+      security: []
+      responses:
+        "200":
+          description: Healthy status payload
+
+  /auth/login:
+    post:
+      summary: Authenticate user and issue JWT token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [login, senha]
+              properties:
+                login:
+                  type: string
+                  example: admin
+                senha:
+                  type: string
+                  example: "123456"
+      responses:
+        "200":
+          description: JWT token and sanitized user object
+        "401":
+          description: Invalid credentials
+
+  /auth/register:
+    post:
+      summary: Register a new user
+      security: []
+      responses:
+        "201":
+          description: User created
+        "409":
+          description: Login already exists
+
+  /auth/me:
+    get:
+      summary: Get currently authenticated user profile
+      responses:
+        "200":
+          description: Authenticated user details
+
+  /usuarios:
+    get:
+      summary: List paginated users with role and search filters
+      responses:
+        "200":
+          description: Paginated user list
+    post:
+      summary: Create user (ADMIN, GESTOR, SECRETARIA)
+      responses:
+        "201":
+          description: User created
+
+  /escola/series:
+    get:
+      summary: List school grades
+      responses:
+        "200":
+          description: Array of grades
+
+  /escola/periodos:
+    get:
+      summary: List academic shifts/periods
+      responses:
+        "200":
+          description: Array of periods
+
+  /escola/turmas:
+    get:
+      summary: List classes with grade, period, and enrollment count
+      responses:
+        "200":
+          description: Array of classes
+
+  /escola/disciplinas:
+    get:
+      summary: List subjects
+      responses:
+        "200":
+          description: Array of subjects
+
+  /boletins:
+    get:
+      summary: List report cards
+      responses:
+        "200":
+          description: Array of report cards
+
+  /ocorrencias:
+    get:
+      summary: List student disciplinary/academic incidents
+      responses:
+        "200":
+          description: Paginated incidents
+
+  /tarefas:
+    get:
+      summary: List assignments with optional file attachments
+      responses:
+        "200":
+          description: Array of assignments
+
+  /imagens:
+    get:
+      summary: List gallery images
+      responses:
+        "200":
+          description: Paginated image gallery
+
+  /enderecos/ufs:
+    get:
+      summary: List Brazilian states (UF)
+      responses:
+        "200":
+          description: Array of states
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
